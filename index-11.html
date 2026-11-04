@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TeachMate Office</title>
+<meta name="description" content="TeachMate Office: the school office for head teachers and school admins.">
+<meta name="theme-color" content="#0e6a47">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192-1.png">
+<style>
+:root{
+  --paper:#f1f6f0; --card:#ffffff; --ink:#13241d; --ink2:#4a5d54; --rule:#cddcd2;
+  --green:#0e6a47; --green-d:#0a4f35; --margin:#c8321f; --warn:#8a4b00; --warn-bg:#fff4e0;
+  --err:#a3271a; --err-bg:#fdecea; --ok:#0a5a3b; --ok-bg:#e6f4ec; --focus:#d9650b;
+  --serif:Georgia,'Noto Serif','Times New Roman',serif;
+  --sans:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans','Helvetica Neue',Arial,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;min-height:100dvh;background:var(--paper);color:var(--ink);font:16px/1.5 var(--sans);-webkit-tap-highlight-color:transparent}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+
+.shell{display:grid;min-height:100vh;min-height:100dvh;grid-template-columns:1fr}
+@media(min-width:860px){.shell{grid-template-columns:minmax(320px,5fr) minmax(420px,6fr)}}
+
+/* Left: ledger page */
+.ledger{
+  position:relative;padding:28px max(20px,env(safe-area-inset-left)) 20px;
+  background:
+    linear-gradient(90deg,transparent 0,transparent 47px,var(--margin) 47px,var(--margin) 49px,transparent 49px),
+    repeating-linear-gradient(180deg,transparent 0,transparent 31px,var(--rule) 31px,var(--rule) 32px),
+    var(--paper);
+  border-bottom:1px solid var(--rule);
+}
+@media(min-width:860px){.ledger{padding:56px 48px 40px 88px;border-bottom:0;border-right:1px solid var(--rule);display:flex;flex-direction:column;justify-content:center}}
+.ledger-inner{padding-left:0;max-width:460px}
+@media(min-width:860px){.ledger-inner{padding-left:0}}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;color:var(--green-d)}
+.brand-mark{width:34px;height:34px;border-radius:9px;background:var(--green);color:#fff;display:grid;place-items:center;font-family:var(--serif);font-size:20px}
+.ledger h1{font:700 clamp(1.5rem,4.2vw,2.35rem)/1.15 var(--serif);margin:18px 0 10px;letter-spacing:-.01em}
+.ledger p{margin:0 0 8px;color:var(--ink2);max-width:40ch}
+.ledger .rules{display:none;margin:22px 0 0;padding:0;list-style:none;color:var(--ink2)}
+@media(min-width:860px){.ledger .rules{display:block}}
+.ledger .rules li{padding:6px 0 6px 0;font-size:.95rem}
+.ledger .rules b{color:var(--ink)}
+
+/* Right: form */
+.panel{display:flex;align-items:flex-start;justify-content:center;padding:20px max(16px,env(safe-area-inset-right)) calc(28px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+@media(min-width:860px){.panel{align-items:center;padding:40px}}
+.card{width:100%;max-width:460px;background:var(--card);border:1px solid var(--rule);border-radius:14px;padding:20px;box-shadow:0 1px 2px rgba(19,36,29,.06)}
+@media(min-width:420px){.card{padding:26px}}
+
+.tabs{display:grid;grid-template-columns:1fr 1fr;border-bottom:2px solid var(--rule);margin:-4px 0 18px}
+.tab{background:none;border:0;padding:12px 6px;font-weight:600;color:var(--ink2);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;min-height:48px}
+.tab[aria-selected="true"]{color:var(--green-d);border-bottom-color:var(--green)}
+
+h2{font:700 1.25rem/1.25 var(--serif);margin:0 0 4px}
+.sub{margin:0 0 16px;color:var(--ink2);font-size:.95rem}
+
+.field{margin:0 0 14px}
+.field label{display:block;font-weight:600;font-size:.92rem;margin:0 0 5px}
+.field .hint{display:block;font-size:.82rem;color:var(--ink2);margin-top:5px;line-height:1.4}
+.input{width:100%;min-height:48px;padding:11px 12px;border:1.5px solid #9db3a6;border-radius:10px;background:#fff;font-size:16px}
+.input:focus{border-color:var(--green)}
+.input[aria-invalid="true"]{border-color:var(--err)}
+.pw{position:relative}
+.pw .input{padding-right:78px}
+.pw button{position:absolute;right:4px;top:4px;height:40px;padding:0 12px;border:0;background:none;color:var(--green-d);font-weight:600;cursor:pointer;border-radius:8px}
+.row{display:flex;gap:8px}
+.row .input{flex:1;min-width:0}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:50px;padding:12px 16px;border:0;border-radius:10px;background:var(--green);color:#fff;font-weight:700;cursor:pointer;touch-action:manipulation}
+.btn:hover{background:var(--green-d)}
+.btn[disabled]{opacity:.6;cursor:not-allowed}
+.btn.ghost{background:#fff;color:var(--green-d);border:1.5px solid var(--green);width:auto;min-width:92px}
+.btn.ghost:hover{background:var(--ok-bg)}
+.link{background:none;border:0;padding:10px 4px;color:var(--green-d);font-weight:600;text-decoration:underline;cursor:pointer;min-height:44px}
+.center{text-align:center}
+
+/* Role choice */
+.roles{display:grid;gap:12px;margin:0 0 14px}
+.role{display:flex;align-items:flex-start;gap:14px;text-align:left;width:100%;background:#fff;border:1.5px solid #9db3a6;border-radius:12px;padding:16px;cursor:pointer;min-height:92px;touch-action:manipulation;transition:border-color .12s,background .12s}
+.role:hover{border-color:var(--green);background:#f7fbf8}
+.role:active{background:var(--ok-bg)}
+.role .ico{flex:0 0 auto;width:46px;height:46px;border-radius:11px;background:var(--ok-bg);color:var(--green-d);display:grid;place-items:center}
+.role .txt{display:block;min-width:0}
+.role strong{display:block;font:700 1.08rem/1.25 var(--serif);margin-bottom:3px}
+.role .txt>span{display:block;font-size:.86rem;line-height:1.4;color:var(--ink2)}
+.fine{margin:6px 0 0;font-size:.85rem;color:var(--ink2);text-align:center}
+.rolebar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:-6px 0 12px}
+.chip{display:inline-block;padding:5px 12px;border-radius:999px;background:var(--ok-bg);color:var(--green-d);font-weight:700;font-size:.88rem}
+.rolebar .link{min-height:40px;padding:6px 2px;font-size:.9rem}
+
+.notice{border-radius:10px;padding:11px 13px;font-size:.92rem;line-height:1.45;margin:0 0 14px}
+.notice.err{background:var(--err-bg);color:var(--err)}
+.notice.ok{background:var(--ok-bg);color:var(--ok)}
+.notice.warn{background:var(--warn-bg);color:var(--warn)}
+.notice.info{background:#eef3f9;color:#24415f}
+
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(241,246,240,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px}
+.spin{width:38px;height:38px;border-radius:50%;border:4px solid var(--rule);border-top-color:var(--green);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.spin{animation-duration:2.4s}}
+noscript p{padding:20px;text-align:center}
+
+/* ── TeachMate Office look (matches the dashboards) ── */
+:root{--paper:#f4f2ec;--rule:#e5e0d4;--ink:#101828;--ink2:#4b5568;--green:#2552d9;--green-d:#1b3fa6;--ok-bg:#eaf0ff;--ok:#1b3fa6;--focus:#f2b01e;--margin:#f2b01e;
+  --serif:system-ui,-apple-system,'Segoe UI',Roboto,'Noto Sans','Helvetica Neue',Arial,sans-serif}
+.ledger{background:radial-gradient(70% 60% at 100% 0%,rgba(242,176,30,.28),transparent 60%),radial-gradient(60% 70% at 0% 100%,rgba(59,108,240,.32),transparent 60%),#0c1322;border:0;color:#fff;overflow:hidden}
+.ledger::after{content:'';position:absolute;right:-90px;top:-90px;width:300px;height:300px;border-radius:50%;border:1px solid rgba(242,176,30,.35);box-shadow:0 0 0 38px rgba(242,176,30,.06),0 0 0 76px rgba(242,176,30,.04);pointer-events:none}
+.ledger-inner{position:relative;z-index:1}
+.brand{color:#fff;font-size:1.05rem;letter-spacing:-.01em}
+.brand-mark{background:#f2b01e;color:#0a1224;border-radius:11px;width:38px;height:38px}
+.ledger h1{color:#fff;font-weight:800;letter-spacing:-.035em}
+.ledger p,.ledger .rules{color:#a9b6d8}
+.ledger .rules b{color:#fff}
+.ledger .rules li{border-top:1px solid rgba(255,255,255,.09)}
+@media(min-width:860px){.ledger{padding-left:56px}}
+.card{border-radius:18px;box-shadow:0 1px 2px rgba(60,50,20,.06),0 18px 40px rgba(60,50,20,.08)}
+.input{border-color:#d9d3c4;border-radius:11px}
+.input:focus{box-shadow:0 0 0 3px rgba(37,82,217,.16)}
+.btn{border-radius:11px}
+.role{border-color:#e0dacb;border-radius:14px}
+.role:hover{background:#f7f9ff}
+.role .ico{background:#f6f1e3;color:#8a6a10}
+h2,.role strong{font-family:var(--sans);letter-spacing:-.02em}
+.overlay{background:rgba(244,242,236,.94)}
+.spin{border-top-color:#f2b01e}
+</style>
+</head>
+<body>
+<noscript><p>TeachMate needs JavaScript turned on to work.</p></noscript>
+
+<div class="shell">
+  <section class="ledger" aria-label="About this portal">
+    <div class="ledger-inner">
+      <div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5C10 5 7 4.5 4 5v12c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5z"/><path d="M12 6.5V18.5"/></svg></span><span>TeachMate <span style="font-weight:500">Office</span></span></div>
+      <h1>The school office, in one <span style="white-space:nowrap">sign-in.</span></h1>
+      <p>One place for head teachers and school admins. Teachers use the TeachMate teacher app.</p>
+      <ul class="rules">
+        <li><b>One head teacher per school.</b> The first account created holds it.</li>
+        <li><b>Any number of admins.</b> Each one waits for the head teacher to approve.</li>
+        <li><b>Your password is yours.</b> It opens only your own dashboard.</li>
+      </ul>
+    </div>
+  </section>
+
+  <main class="panel">
+    <div class="card">
+      <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+
+      <!-- STEP 1: who are you? -->
+      <section id="view-choose" aria-labelledby="choose-title">
+        <h2 id="choose-title">Welcome to TeachMate Office</h2>
+        <p class="sub">Are you the head teacher or an admin?</p>
+        <div class="roles" role="group" aria-label="Choose your role">
+          <button type="button" class="role" data-role="headteacher">
+            <span class="ico"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5L2 9z"/><path d="M6 11.5V16c0 1.5 3 3 6 3s6-1.5 6-3v-4.5"/><path d="M22 9v6"/></svg></span>
+            <span class="txt"><strong>I am the head teacher</strong><span>Open or sign in to your school's account. Only one head teacher is allowed per school.</span></span>
+          </button>
+          <button type="button" class="role" data-role="admin">
+            <span class="ico"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/><path d="M8.5 12l2.5 2.5L16 9.5"/></svg></span>
+            <span class="txt"><strong>I am a school admin</strong><span>Join your school with its code. Your head teacher approves every admin.</span></span>
+          </button>
+        </div>
+        <p class="fine">Teachers sign in on the TeachMate teacher app.</p>
+      </section>
+
+      <!-- STEP 2: sign in or create an account, for that role -->
+      <section id="view-auth" hidden>
+        <div class="rolebar">
+          <span class="chip" id="rolebar-label"></span>
+          <button class="link" id="switch-role" type="button">Switch role</button>
+        </div>
+        <div class="tabs" role="tablist" aria-label="Sign in or create account">
+          <button class="tab" role="tab" id="tab-login" aria-selected="true" aria-controls="view-login" type="button">Sign in</button>
+          <button class="tab" role="tab" id="tab-register" aria-selected="false" aria-controls="view-register" type="button">Create account</button>
+        </div>
+
+        <form id="view-login" role="tabpanel" aria-labelledby="tab-login" novalidate>
+        <h2>Welcome back</h2>
+        <p class="sub" id="login-sub">Use the email and password you registered with.</p>
+        <div class="field">
+          <label for="login-email">Email</label>
+          <input class="input" id="login-email" type="email" inputmode="email" autocomplete="username" autocapitalize="none" spellcheck="false">
+        </div>
+        <div class="field">
+          <label for="login-pass">Password</label>
+          <div class="pw">
+            <input class="input" id="login-pass" type="password" autocomplete="current-password">
+            <button type="button" class="pw-toggle" data-for="login-pass" aria-label="Show password">Show</button>
+          </div>
+        </div>
+        <button class="btn" id="login-btn" type="submit">Sign in</button>
+        <div class="center"><button class="link" id="forgot-btn" type="button">Forgot password?</button></div>
+      </form>
+
+        <div id="view-register" role="tabpanel" aria-labelledby="tab-register" hidden>
+          <h2 id="reg-title">Create your account</h2>
+          <p class="sub" id="role-prompt"></p>
+          <form id="form-ht" hidden novalidate>
+          <div class="field"><label for="ht-name">Full name</label>
+            <input class="input" id="ht-name" autocomplete="name" maxlength="80"></div>
+          <div class="field"><label for="ht-ts">TS number</label>
+            <input class="input" id="ht-ts" autocomplete="off" maxlength="30"></div>
+          <div class="field"><label for="ht-email">Email</label>
+            <input class="input" id="ht-email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false"></div>
+          <div class="field"><label for="ht-pass">Create a password</label>
+            <div class="pw"><input class="input" id="ht-pass" type="password" autocomplete="new-password">
+              <button type="button" class="pw-toggle" data-for="ht-pass" aria-label="Show password">Show</button></div>
+            <span class="hint">At least 8 characters. Only you will use it to open the head teacher dashboard.</span></div>
+          <div class="field"><label for="ht-school">School name</label>
+            <input class="input" id="ht-school" autocomplete="organization" maxlength="100">
+            <span class="hint">Type it exactly as it should appear on reports.</span></div>
+          <div class="field"><label for="ht-code">School code (optional)</label>
+            <input class="input" id="ht-code" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20">
+            <span class="hint">Leave it empty to get a new code for your teachers. If your school was already set up by TeachMate, enter the code you were given.</span></div>
+          <button class="btn" id="ht-btn" type="submit">Create head teacher account</button>
+        </form>
+          <form id="form-ad" hidden novalidate>
+          <div class="field"><label for="ad-name">Full name</label>
+            <input class="input" id="ad-name" autocomplete="name" maxlength="80"></div>
+          <div class="field"><label for="ad-email">Email</label>
+            <input class="input" id="ad-email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false"></div>
+          <div class="field"><label for="ad-pass">Create a password</label>
+            <div class="pw"><input class="input" id="ad-pass" type="password" autocomplete="new-password">
+              <button type="button" class="pw-toggle" data-for="ad-pass" aria-label="Show password">Show</button></div>
+            <span class="hint">At least 8 characters.</span></div>
+          <div class="field"><label for="ad-code">School code</label>
+            <div class="row">
+              <input class="input" id="ad-code" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20">
+              <button class="btn ghost" id="ad-verify" type="button">Check code</button>
+            </div>
+            <span class="hint" id="ad-school-note">Ask your head teacher for the school code.</span></div>
+          <button class="btn" id="ad-btn" type="submit">Send request to head teacher</button>
+        </form>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div class="overlay" id="overlay" role="status" aria-live="polite">
+  <div class="spin" aria-hidden="true"></div><div id="overlay-text">Loading…</div>
+</div>
+
+<script type="module">
+/* FIREBASE-IMPORTS-BEGIN */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+import {
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInAnonymously,
+  linkWithCredential, EmailAuthProvider, signOut, onAuthStateChanged, sendPasswordResetEmail
+} from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, getDocs, collection, query, where, limit, writeBatch, setDoc, deleteDoc, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+/* FIREBASE-IMPORTS-END */
+
+const firebaseConfig = {
+  apiKey:"AIzaSyC3Uco6S1xyoxdgjbNtpAe_ofUtG0nI0XI",
+  authDomain:"grok-7568a.firebaseapp.com",
+  projectId:"grok-7568a",
+  storageBucket:"grok-7568a.appspot.com",
+  messagingSenderId:"802272835730",
+  appId:"1:802272835730:web:f80f3c986cebbfcd51ce4b"
+};
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+const $ = id => document.getElementById(id);
+const MIN_PASS = 8;
+
+/* ───────────── small helpers ───────────── */
+const normName = s => String(s||'').normalize('NFKC').replace(/\s+/g,' ').trim();
+const nameKey  = s => normName(s).toLowerCase();
+const normCode = s => String(s||'').toUpperCase().replace(/\s+/g,'');
+const normEmail= s => String(s||'').trim().toLowerCase();
+const okEmail  = s => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s);
+
+let notices = $('notice');
+function notice(msg, kind){
+  if (!msg){ notices.hidden = true; notices.textContent=''; return; }
+  notices.className = 'notice ' + (kind||'info');
+  notices.textContent = msg;
+  notices.hidden = false;
+  try { notices.scrollIntoView({block:'nearest'}); } catch(_){}
+}
+function overlay(on, text){
+  $('overlay').hidden = !on;
+  if (text) $('overlay-text').textContent = text;
+}
+function friendly(e){
+  const c = (e && e.code) || '';
+  if (/invalid-credential|wrong-password|user-not-found|invalid-login/.test(c)) return 'The email or password is not correct.';
+  if (c === 'auth/email-already-in-use') return 'An account with this email already exists. Use Sign in, or reset your password.';
+  if (c === 'auth/weak-password') return 'Choose a stronger password with at least '+MIN_PASS+' characters.';
+  if (c === 'auth/invalid-email') return 'That email address is not valid.';
+  if (c === 'auth/network-request-failed' || (!navigator.onLine)) return 'No internet connection. Connect and try again.';
+  if (c === 'auth/too-many-requests') return 'Too many attempts. Wait a few minutes, or reset your password.';
+  if (c === 'auth/user-disabled') return 'This account has been disabled. Contact TeachMate support.';
+  if (c === 'permission-denied' || c === 'firestore/permission-denied') return 'The server refused this step. If this keeps happening, contact TeachMate support.';
+  return (e && e.userMessage) || 'Something went wrong. Check your connection and try again.';
+}
+class UserError extends Error { constructor(m){ super(m); this.userMessage = m; } }
+
+/* ───────────── tabs, roles, password toggles ───────────── */
+function showTab(which){
+  const login = which === 'login';
+  $('tab-login').setAttribute('aria-selected', String(login));
+  $('tab-register').setAttribute('aria-selected', String(!login));
+  $('view-login').hidden = !login;
+  $('view-register').hidden = login;
+  notice('');
+}
+$('tab-login').addEventListener('click', () => showTab('login'));
+$('tab-register').addEventListener('click', () => showTab('register'));
+
+const ROLE_LABEL = { headteacher: 'Head teacher', admin: 'School admin' };
+const ROLE_WORD  = { headteacher: 'head teacher', admin: 'school admin' };
+let chosenRole = null;
+try { const r = localStorage.getItem('tm-office-role'); if (ROLE_LABEL[r]) chosenRole = r; } catch(_){}
+
+function showChooser(){
+  $('view-choose').hidden = false; $('view-auth').hidden = true; notice('');
+}
+function setRole(role, remember){
+  chosenRole = role;
+  if (remember !== false){ try { localStorage.setItem('tm-office-role', role); } catch(_){} }
+  $('view-choose').hidden = true; $('view-auth').hidden = false;
+  $('rolebar-label').textContent = ROLE_LABEL[role];
+  $('form-ht').hidden = role !== 'headteacher';
+  $('form-ad').hidden = role !== 'admin';
+  $('reg-title').textContent = role === 'headteacher' ? 'Create your head teacher account' : 'Request admin access';
+  $('role-prompt').textContent = role === 'headteacher'
+    ? 'Set up your school. Only one head teacher is allowed per school.'
+    : 'Join your school with its code. Your head teacher approves the request.';
+  $('login-sub').textContent = 'Use the email and password you registered as ' + (role === 'headteacher' ? 'the head teacher' : 'a school admin') + '.';
+  $('login-btn').textContent = 'Sign in as ' + ROLE_WORD[role];
+  showTab('login');
+}
+document.querySelectorAll('.role').forEach(b => b.addEventListener('click', () => setRole(b.dataset.role)));
+$('switch-role').addEventListener('click', () => {
+  try { localStorage.removeItem('tm-office-role'); } catch(_){}
+  chosenRole = null; showChooser();
+});
+
+document.querySelectorAll('.pw-toggle').forEach(b => b.addEventListener('click', () => {
+  const inp = $(b.dataset.for); const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  b.textContent = show ? 'Hide' : 'Show';
+  b.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+}));
+$('ht-code').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase(); });
+$('ad-code').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase(); verified = null; setSchoolNote('Ask your head teacher for the school code.'); });
+
+/* ───────────── navigation + session ───────────── */
+let regLock = false;      // true while we are creating an account (ignore auth observer)
+let routing = false;      // true while we decide which dashboard to open
+function go(page){ overlay(true, 'Opening your dashboard…'); location.replace(page); }
+
+async function softSignOut(msg, kind){
+  try { await signOut(auth); } catch(_){}
+  routing = false; overlay(false);
+  if (chosenRole) setRole(chosenRole, false); else showChooser();
+  notice(msg, kind || 'err');
+}
+
+/* One head teacher per school: the claim document is the single source of truth.
+   Firestore rules make it create-only, so the first account to claim it keeps it. */
+async function ensureHeadClaim(uid, schoolId){
+  const ref = doc(db, 'schools', schoolId, 'roles', 'headteacher');
+  try {
+    const snap = await getDoc(ref);
+    if (snap.exists()) return snap.data().uid === uid ? 'ok' : 'other';
+    // Older accounts created before this portal have no claim yet: claim it now (first one wins).
+    try { await setDoc(ref, { uid, createdAt: serverTimestamp() }); return 'ok'; }
+    catch (e) {
+      const again = await getDoc(ref).catch(() => null);
+      if (again && again.exists()) return again.data().uid === uid ? 'ok' : 'other';
+      return 'error';
+    }
+  } catch (e) { return 'error'; }
+}
+
+async function route(user, expect){
+  if (routing) return;
+  routing = true; overlay(true, 'Checking your account…');
+  try {
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    if (!snap.exists()){
+      return softSignOut('Your account setup was not finished. Open Create account and register again with the same email and password to finish it.', 'warn');
+    }
+    const u = snap.data();
+    if (expect && ROLE_LABEL[u.role] && u.role !== expect){
+      return softSignOut('That is a ' + ROLE_WORD[u.role] + ' account. Choose "Switch role", then "' + (u.role === 'admin' ? 'I am a school admin' : 'I am the head teacher') + '".', 'warn');
+    }
+    if (u.role === 'admin'){ return go('admin.html'); }
+    if (u.role === 'headteacher'){
+      if (!u.schoolId || u.schoolId === 'pending')
+        return softSignOut('Your head teacher sign-up was not finished. Open Create account and register again with the same email and password to finish it.', 'warn');
+      const r = await ensureHeadClaim(user.uid, u.schoolId);
+      if (r === 'ok') return go('headteacher.html');
+      if (r === 'other')
+        return softSignOut('This school already has a different registered head teacher, so this account cannot open the head teacher dashboard. If that is a mistake, contact TeachMate support.');
+      return softSignOut('We could not confirm your head teacher account. Check your connection and try again.');
+    }
+    return softSignOut('This portal is for head teachers and school admins. Teachers sign in on the TeachMate teacher app.');
+  } catch (e) {
+    routing = false; overlay(false); notice(friendly(e), 'err');
+  }
+}
+
+/* ───────────── account creation helpers ───────────── */
+async function ensureLookupSession(){
+  if (!auth.currentUser) await signInAnonymously(auth);
+}
+
+// Turn the (possibly anonymous) lookup session into the real account, or recover a half-made one.
+async function acquireUser(email, pass){
+  const cur = auth.currentUser;
+  const cred = EmailAuthProvider.credential(email, pass);
+  try {
+    if (cur && cur.isAnonymous){ const r = await linkWithCredential(cur, cred); return { user: r.user, created: true }; }
+    const r = await createUserWithEmailAndPassword(auth, email, pass);
+    return { user: r.user, created: true };
+  } catch (e) {
+    const dup = e && (e.code === 'auth/email-already-in-use' || e.code === 'auth/credential-already-in-use');
+    if (!dup) throw e;
+    let r;
+    try { r = await signInWithEmailAndPassword(auth, email, pass); }
+    catch (_) { throw new UserError('An account with this email already exists. Use Sign in, or reset your password.'); }
+    const prof = await getDoc(doc(db, 'users', r.user.uid));
+    if (prof.exists() && prof.data().schoolId !== 'pending') throw new UserError('This email is already registered. Use Sign in instead.');
+    return { user: r.user, created: false };   // earlier setup never finished: finish it now
+  }
+}
+async function discard(user, created){
+  if (!created) return;
+  try { await deleteDoc(doc(db,'users',user.uid)); } catch(_){}
+  try { await user.delete(); } catch(_){ try { await signOut(auth); } catch(__){} }
+}
+
+async function findSchoolByCode(code){
+  const s = await getDocs(query(collection(db,'schools'), where('schoolCode','==',code), limit(1)));
+  return s.empty ? null : s.docs[0];
+}
+async function findSchoolByName(name){
+  const tries = [['nameKey','==',nameKey(name)], ['name','==',name], ['name','==',name.toUpperCase()], ['name','==',name.toLowerCase()]];
+  for (const [f,o,v] of tries){
+    const s = await getDocs(query(collection(db,'schools'), where(f,o,v), limit(1)));
+    if (!s.empty) return s.docs[0];
+  }
+  return null;
+}
+// 'yes' | 'no' | 'unknown'  — unknown is treated as "yes" (fail closed)
+async function schoolHasHead(schoolId){
+  try {
+    const c = await getDoc(doc(db,'schools',schoolId,'roles','headteacher'));
+    if (c.exists()) return 'yes';
+    const l = await getDocs(query(collection(db,'schools',schoolId,'headteachers'), limit(1)));
+    return l.empty ? 'no' : 'yes';
+  } catch(_){ return 'unknown'; }
+}
+async function newSchoolCode(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  for (let i=0;i<8;i++){
+    const code='HT-'+Array.from({length:6},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+    if (!(await findSchoolByCode(code))) return code;
+  }
+  throw new UserError('Could not create a school code. Try again.');
+}
+
+/* Decide what a head teacher registration would do. Pure lookups, nothing is written. */
+async function inspectForHead(name, code){
+  let school = null;
+  if (code){
+    school = await findSchoolByCode(code);
+    if (school && nameKey(school.data().name) !== nameKey(name))
+      return { kind:'blocked', msg:'That school code belongs to a different school. Check the school name and code.' };
+  }
+  if (!school){
+    const byName = await findSchoolByName(name);
+    if (byName){
+      return { kind:'blocked', msg:'A school with this name is already registered. To become its head teacher, enter the exact school code you were given. If it already has a head teacher, ask them to sign in.' };
+    }
+  }
+  if (!school) return { kind:'new', code: code || await newSchoolCode() };
+  const has = await schoolHasHead(school.id);
+  if (has === 'yes') return { kind:'blocked', msg: (school.data().name||'This school') + ' already has a head teacher account, and only one is allowed per school. If you are an admin there, create your account as School admin.' };
+  if (has === 'unknown') return { kind:'blocked', msg:'We could not confirm whether this school already has a head teacher. Check your connection and try again, or contact TeachMate support.' };
+  return { kind:'claim', schoolId: school.id, schoolName: school.data().name, code };
+}
+
+/* ───────────── head teacher registration ───────────── */
+let htBusy = false;
+$('form-ht').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  if (htBusy) return;
+  const name = normName($('ht-name').value), ts = normName($('ht-ts').value);
+  const email = normEmail($('ht-email').value), pass = $('ht-pass').value;
+  const school = normName($('ht-school').value), code = normCode($('ht-code').value);
+
+  if (!name) return notice('Enter your full name.', 'err');
+  if (!ts) return notice('Enter your TS number.', 'err');
+  if (!okEmail(email)) return notice('Enter a valid email address.', 'err');
+  if (pass.length < MIN_PASS) return notice('Your password needs at least '+MIN_PASS+' characters.', 'err');
+  if (school.length < 3) return notice('Enter your school name.', 'err');
+  if (code && !/^[A-Z0-9-]{4,20}$/.test(code)) return notice('A school code uses letters, numbers and dashes only (4 to 20 characters).', 'err');
+  if (!navigator.onLine) return notice('No internet connection. Connect and try again.', 'err');
+
+  htBusy = true; regLock = true; $('ht-btn').disabled = true;
+  notice(''); overlay(true, 'Setting up your school…');
+  let got = null;
+  try {
+    await ensureLookupSession();
+    const plan = await inspectForHead(school, code);
+    if (plan.kind === 'blocked'){ overlay(false); return notice(plan.msg, 'err'); }
+
+    got = await acquireUser(email, pass);
+    const uid = got.user.uid;
+    const schoolRef = plan.kind === 'new' ? doc(collection(db,'schools')) : doc(db,'schools',plan.schoolId);
+    const sid = schoolRef.id;
+
+    // Step 1: the profile must exist BEFORE the school is created (the database rules check it).
+    await setDoc(doc(db,'users',uid), { schoolId:'pending', role:'headteacher', accountStatus:'active', approved:true, email, name });
+
+    // Step 2: school + head teacher record + the one-per-school claim, all or nothing.
+    const batch = writeBatch(db);
+    if (plan.kind === 'new'){
+      batch.set(schoolRef, {
+        name: school, nameKey: nameKey(school), schoolCode: plan.code,
+        status:'expired', expiryDate:null, address:'', phone:'', email:'',
+        lastUpdated: serverTimestamp(), createdAt: serverTimestamp()
+      });
+    }
+    batch.update(doc(db,'users',uid), { schoolId:sid });
+    batch.set(doc(db,'schools',sid,'headteachers',uid), { name, tsNumber:ts, email, createdAt: serverTimestamp() });
+    batch.set(doc(db,'schools',sid,'roles','headteacher'), { uid, createdAt: serverTimestamp() });
+    try { await batch.commit(); }
+    catch (e) {
+      // Someone else may have claimed the school a moment ago: say so clearly.
+      let claimed = false;
+      if (plan.kind === 'claim'){
+        const c = await getDoc(doc(db,'schools',sid,'roles','headteacher')).catch(()=>null);
+        claimed = !!(c && c.exists());
+      }
+      await discard(got.user, got.created); got = null;
+      overlay(false);
+      if (claimed) return notice('Another account just became this school\'s head teacher. Only one is allowed per school.', 'err');
+      throw e;
+    }
+
+    regLock = false;
+    await route(got.user);
+  } catch (e) {
+    if (got) await discard(got.user, got.created);
+    overlay(false); notice(friendly(e), 'err');
+  } finally {
+    regLock = false; htBusy = false; $('ht-btn').disabled = false;
+  }
+});
+
+/* ───────────── admin registration ───────────── */
+let verified = null;      // { code, schoolId, schoolName } after a successful check
+function setSchoolNote(html, kind){
+  const n = $('ad-school-note');
+  n.textContent = html;
+  n.style.color = kind === 'err' ? 'var(--err)' : kind === 'ok' ? 'var(--ok)' : '';
+  n.style.fontWeight = kind ? '600' : '';
+}
+async function verifySchool(code){
+  await ensureLookupSession();
+  const d = await findSchoolByCode(code);
+  if (!d) throw new UserError('No school has the code "'+code+'". Ask your head teacher to confirm it.');
+  const data = d.data();
+  if (data.status === 'expired')
+    throw new UserError((data.name||'This school')+' has no active subscription yet, so staff cannot join. Ask your head teacher to renew it.');
+  const has = await schoolHasHead(d.id);
+  if (has === 'no')
+    throw new UserError((data.name||'This school')+' has no head teacher account yet, so nobody can approve your request. Ask the head teacher to register first.');
+  return { code, schoolId: d.id, schoolName: data.name || 'your school' };
+}
+$('ad-verify').addEventListener('click', async () => {
+  const code = normCode($('ad-code').value);
+  if (code.length < 3) return setSchoolNote('Enter the school code first.', 'err');
+  if (!navigator.onLine) return setSchoolNote('No internet connection. Connect and try again.', 'err');
+  const b = $('ad-verify'); b.disabled = true; setSchoolNote('Checking…');
+  try { verified = await verifySchool(code); setSchoolNote('Found: '+verified.schoolName, 'ok'); }
+  catch (e) { verified = null; setSchoolNote(friendly(e), 'err'); }
+  finally { b.disabled = false; }
+});
+
+let adBusy = false;
+$('form-ad').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  if (adBusy) return;
+  const name = normName($('ad-name').value), email = normEmail($('ad-email').value);
+  const pass = $('ad-pass').value, code = normCode($('ad-code').value);
+  if (!name) return notice('Enter your full name.', 'err');
+  if (!okEmail(email)) return notice('Enter a valid email address.', 'err');
+  if (pass.length < MIN_PASS) return notice('Your password needs at least '+MIN_PASS+' characters.', 'err');
+  if (code.length < 3) return notice('Enter the school code from your head teacher.', 'err');
+  if (!navigator.onLine) return notice('No internet connection. Connect and try again.', 'err');
+
+  adBusy = true; regLock = true; $('ad-btn').disabled = true;
+  notice(''); overlay(true, 'Sending your request…');
+  let got = null;
+  try {
+    if (!verified || verified.code !== code){
+      try { verified = await verifySchool(code); setSchoolNote('Found: '+verified.schoolName, 'ok'); }
+      catch (e) { verified = null; overlay(false); setSchoolNote(friendly(e), 'err'); return notice(friendly(e), 'err'); }
+    }
+    got = await acquireUser(email, pass);
+    const uid = got.user.uid, sid = verified.schoolId;
+    const batch = writeBatch(db);
+    batch.set(doc(db,'users',uid), { schoolId:sid, role:'admin', accountStatus:'pending', approved:false, email, name, createdAt:new Date().toISOString() });
+    batch.set(doc(db,'schools',sid,'admissionRequests',uid), {
+      uid, name, email, role:'admin', requestStatus:'pending', schoolId:sid, schoolName:verified.schoolName,
+      submittedAt: serverTimestamp(), appVersion:'TeachMate Portal 1.0', platform: navigator.userAgent
+    }, { merge:true });
+    try { await batch.commit(); }
+    catch (e) { await discard(got.user, got.created); got = null; throw e; }
+
+    regLock = false;
+    await route(got.user);      // opens the admin dashboard, which shows "waiting for approval"
+  } catch (e) {
+    if (got) await discard(got.user, got.created);
+    overlay(false); notice(friendly(e), 'err');
+  } finally {
+    regLock = false; adBusy = false; $('ad-btn').disabled = false;
+  }
+});
+
+/* ───────────── sign in + password reset ───────────── */
+let loginBusy = false;
+$('view-login').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  if (loginBusy) return;
+  const email = normEmail($('login-email').value), pass = $('login-pass').value;
+  if (!okEmail(email)) return notice('Enter the email you registered with.', 'err');
+  if (!pass) return notice('Enter your password.', 'err');
+  if (!navigator.onLine) return notice('No internet connection. Connect and try again.', 'err');
+  loginBusy = true; $('login-btn').disabled = true; notice(''); overlay(true, 'Signing you in…');
+  try {
+    const r = await signInWithEmailAndPassword(auth, email, pass);
+    await route(r.user, chosenRole);
+  } catch (e) { overlay(false); notice(friendly(e), 'err'); }
+  finally { loginBusy = false; $('login-btn').disabled = false; }
+});
+$('forgot-btn').addEventListener('click', async () => {
+  const email = normEmail($('login-email').value);
+  if (!okEmail(email)) return notice('Enter your email above first, then tap Forgot password.', 'warn');
+  if (!navigator.onLine) return notice('No internet connection. Connect and try again.', 'err');
+  try { await sendPasswordResetEmail(auth, email); } catch (e) {
+    if (e && /too-many|network/.test(e.code||'')) return notice(friendly(e), 'err');
+  }
+  notice('If an account exists for '+email+', a reset link is on its way.', 'ok');   // same message either way
+});
+
+/* ───────────── start up ───────────── */
+if (chosenRole) setRole(chosenRole, false); else showChooser();
+const params = new URLSearchParams(location.search);
+const stayOnForm = params.has('out');           // dashboards send people back with ?out=1 and must not be auto-routed
+if (stayOnForm){ try { history.replaceState(null, '', location.pathname); } catch(_){} }
+try {
+  const m = sessionStorage.getItem('tm-portal-msg');
+  if (m){ sessionStorage.removeItem('tm-portal-msg'); notice(m, 'warn'); }
+} catch(_){}
+
+let settled = false;
+const failSafe = setTimeout(() => { if (!settled){ settled = true; overlay(false); } }, 6000);
+onAuthStateChanged(auth, user => {
+  if (settled && !user) return;
+  settled = true; clearTimeout(failSafe);
+  if (!user || user.isAnonymous){ overlay(false); return; }
+  if (regLock || routing) return;
+  if (stayOnForm){ overlay(false); return; }
+  route(user);
+});
+</script>
+</body>
+</html>
